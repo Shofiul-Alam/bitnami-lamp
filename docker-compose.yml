@@ -1,0 +1,42 @@
+version: '2'
+
+services:
+  mariadb:
+    image: bitnami/mariadb:latest
+    environment:
+      - MARIADB_ROOT_PASSWORD=bitnami
+    volumes:
+      - 'mariadb_data:/bitnami'
+      - ./dawahwat_db.sql:/bitnami/dawahwat_db.sql
+  apache:
+    image: 'bitnami/apache:latest'
+    ports:
+      - '8080:8080'
+      - '443:8443'
+    depends_on:
+      - mariadb
+    volumes:
+      - ./docker-config/dawat_vhost.conf:/vhosts/my_vhost.conf:ro
+      - ./wordpress:/app
+  php-fpm:
+    image: bitnami/php-fpm:latest
+    depends_on:
+      - mariadb
+    volumes:
+      - ./docker-config/php.ini:/opt/bitnami/php/etc/conf.d/php.ini
+      - ./wordpress:/app
+
+  phpmyadmin:
+    image: bitnami/phpmyadmin:latest
+    ports:
+      - '8888:8080'
+    depends_on:
+      - mariadb
+    volumes:
+      - ./docker-config/config.inc.php:/opt/bitnami/phpmyadmin/config.inc.php
+    environment:
+      - PHP_MAX_EXECUTION_TIME=1200
+      - PHP_MAX_INPUT_TIME=1200
+volumes:
+  mariadb_data:
+    driver: local
